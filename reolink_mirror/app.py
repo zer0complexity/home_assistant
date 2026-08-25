@@ -22,7 +22,6 @@ import json
 import logging
 import re
 import sys
-from contextlib import aclosing
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -116,31 +115,29 @@ async def make_thumbnail(src: Path, sec: float) -> None:
 
 
 async def download_clip(host: Host, channel: int, vod, dest: Path, thumb_offset: float) -> bool:
-    """Download a single VOD clip to ``dest`` over the Baichuan TCP channel.
+    """Download a single VOD clip to ``dest``. Returns True on success.
 
-    Uses reolink-aio PR #186 (``host.baichuan.download_vod``) because the HTTP
-    ``cmd=Download`` path is broken on recent Reolink NVR firmware (the NVR
-    drops the download connection -> "Server disconnected"). The Baichuan path
-    uses the same TCP connection (port 9000) that the motion search already
-    uses. Returns True on success; the partial file is removed on failure.
+    Uses the released HTTP path (``Host.download_vod``), which on an NVR issues
+    ``NvrDownload`` to prepare the segment then streams it via the ``Download``
+    CGI command.
     """
     tmp = dest.with_suffix(dest.suffix + ".part")
     try:
-        # Fetch the expected size up front so we can verify a complete transfer.
-        info = await host.baichuan.get_vod_file_info(channel, vod.file_name, stream="sub")
+        vod_dl = await host.download_vod(
+            vod.file_name,
+            wanted_filename=dest.name,
+            start_time=vod.start_time_id,
+            end_time=vod.end_time_id,
+            channel=channel,
+            stream="sub",
+        )
         dest.parent.mkdir(parents=True, exist_ok=True)
-        written = 0
-        gen = host.baichuan.download_vod(channel, vod.file_name, info=info, timeout=60)
-        async with aclosing(gen) as chunks:
-            with open(tmp, "wb") as fh:
-                async for chunk in chunks:
-                    fh.write(chunk)
-                    written += len(chunk)
-        # Baichuan yields exactly info.size bytes; treat anything else as failed.
-        if written != info.size:
-            raise ReolinkError(f"incomplete download: {written} of {info.size} bytes")
+        with open(tmp, "wb") as fh:
+            async for chunk in vod_dl.stream.iter_chunked(65536):
+                fh.write(chunk)
+        vod_dl.close()
         tmp.replace(dest)
-        _LOGGER.info("Downloaded %s -> %s (%d bytes)", vod.file_name, dest, written)
+        _LOGGER.info("Downloaded %s -> %s", vod.file_name, dest)
         return True
     except ReolinkError as err:
         _LOGGER.warning("Failed to download %s: %s", vod.file_name, err)
@@ -274,9 +271,7 @@ async def main() -> None:
     opts = load_options()
     state = load_state()
 
-    # Use the default HTTP session/connector. The single-connection workaround
-    # for the firmware bug was tried (v0.3.x) and did not help; the Baichuan
-    # download path (PR #186) is the actual fix and uses its own TCP socket.
+    # Use the default HTTP session/connector provided by Host.
     host = Host(
         opts["nvr_host"],
         opts["nvr_username"],
