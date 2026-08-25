@@ -17,14 +17,20 @@ H.264) to `/media` — it never re-records, so there's exactly one mp4 per event
 - Files land in `/media/<media_subdir>/<camera>/<timestamp>.mp4`.
 - Each cycle also deletes local clips older than `mirror_hours` (retention).
 
-## Installation (local add-on on HAOS / Supervised)
+## Installation (from this repository, via the HA UI)
 
-1. Copy the `reolink_mirror` folder into your `/addons` share on the HAOS host
-   (via the Samba/SSH add-on), so it lives at `/addons/reolink_mirror/`.
-2. In Home Assistant: **Settings → Add-ons → Add-on Store → ⋮ → Check for
-   updates**. The add-on appears under **Local add-ons**.
-3. Open it, set the **Configuration** (see below), then **Start**. Watch the
-   **Log** tab for the "Connected. Channels: …" line.
+This add-on is distributed as a Home Assistant add-on repository, so you can
+install and update it entirely from the web UI — no SSH or host access needed.
+
+1. **Settings → Add-ons → Add-on Store → ⋮ (top-right) → Repositories**.
+2. Add this repository URL:
+   `https://github.com/zer0complexity/home_assistant` → **Add** → **Close**.
+3. The **Reolink NVR Mirror** card appears in the store → click it → **Install**
+   (Supervisor builds the image on-device; the first build takes a few minutes).
+4. Set the **Configuration** (see below), then **Start**. Watch the **Log** tab
+   for the "Connected. Channels: …" line.
+
+Updates: bump `version` in `config.yaml`; the store will offer an update.
 
 ## Configuration
 
@@ -47,7 +53,7 @@ directly from the HA disk. Because the media browser does not transcode, the
 
 ## Notes
 
-- This is a local add-on; it is not published to a repository. Bump `version`
-  in `config.yaml` to trigger an update, then reinstall/rebuild from the store.
+- Distributed as an add-on repository (see Installation above). To release an
+  update, bump `version` in `config.yaml` and push; users update from the store.
 - Retention is automatic: clips older than `mirror_hours` are deleted every
-  poll cycle, so local disk usage stays bounded to that window.
+  ~4 hours, so local disk usage stays bounded to that window.
