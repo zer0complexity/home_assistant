@@ -21,23 +21,14 @@ import asyncio
 import json
 import logging
 import re
-import ssl
 import sys
+from contextlib import aclosing
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import aiohttp
 from reolink_aio.api import Host
 from reolink_aio.exceptions import ReolinkError
 from reolink_aio.typings import VOD_trigger
-
-# SSL context used for the NVR's self-signed cert when HTTPS is in play.
-try:
-    from reolink_aio.api import SSL_CONTEXT
-except ImportError:  # older pinned versions may not export it
-    SSL_CONTEXT = ssl.create_default_context()
-    SSL_CONTEXT.check_hostname = False
-    SSL_CONTEXT.verify_mode = ssl.CERT_NONE
 
 OPTIONS_PATH = Path("/data/options.json")
 STATE_PATH = Path("/data/state.json")
@@ -125,24 +116,31 @@ async def make_thumbnail(src: Path, sec: float) -> None:
 
 
 async def download_clip(host: Host, channel: int, vod, dest: Path, thumb_offset: float) -> bool:
-    """Download a single VOD clip to ``dest``. Returns True on success."""
+    """Download a single VOD clip to ``dest`` over the Baichuan TCP channel.
+
+    Uses reolink-aio PR #186 (``host.baichuan.download_vod``) because the HTTP
+    ``cmd=Download`` path is broken on recent Reolink NVR firmware (the NVR
+    drops the download connection -> "Server disconnected"). The Baichuan path
+    uses the same TCP connection (port 9000) that the motion search already
+    uses. Returns True on success; the partial file is removed on failure.
+    """
     tmp = dest.with_suffix(dest.suffix + ".part")
     try:
-        vod_dl = await host.download_vod(
-            vod.file_name,
-            wanted_filename=dest.name,
-            start_time=vod.start_time_id,
-            end_time=vod.end_time_id,
-            channel=channel,
-            stream="sub",
-        )
+        # Fetch the expected size up front so we can verify a complete transfer.
+        info = await host.baichuan.get_vod_file_info(channel, vod.file_name, stream="sub")
         dest.parent.mkdir(parents=True, exist_ok=True)
-        with open(tmp, "wb") as fh:
-            async for chunk in vod_dl.stream.iter_chunked(65536):
-                fh.write(chunk)
-        vod_dl.close()
+        written = 0
+        gen = host.baichuan.download_vod(channel, vod.file_name, info=info, timeout=60)
+        async with aclosing(gen) as chunks:
+            with open(tmp, "wb") as fh:
+                async for chunk in chunks:
+                    fh.write(chunk)
+                    written += len(chunk)
+        # Baichuan yields exactly info.size bytes; treat anything else as failed.
+        if written != info.size:
+            raise ReolinkError(f"incomplete download: {written} of {info.size} bytes")
         tmp.replace(dest)
-        _LOGGER.info("Downloaded %s -> %s", vod.file_name, dest)
+        _LOGGER.info("Downloaded %s -> %s (%d bytes)", vod.file_name, dest, written)
         return True
     except ReolinkError as err:
         _LOGGER.warning("Failed to download %s: %s", vod.file_name, err)
@@ -276,38 +274,15 @@ async def main() -> None:
     opts = load_options()
     state = load_state()
 
-    # Workaround for a Reolink NVR firmware regression (RLN8-410 v3.6.5.x): the
-    # NVR binds the HTTP session to the single TCP connection used at login and
-    # rejects `cmd=Download` when it is sent over a NEW pooled connection
-    # ("Server disconnected"). Forcing a single persistent connection (limit=1)
-    # keeps login, NvrDownload, and Download on the same connection.
-    http_timeout = 60
-    # Keep-alive is on by default (keepalive_timeout); force_close=False keeps the
-    # single connection persistent. `enable_keep_alive` is not a valid kwarg in
-    # aiohttp 3.12 and raises TypeError, so it must be omitted.
-    connector = aiohttp.TCPConnector(
-        ssl=SSL_CONTEXT, limit=1, force_close=False
-    )
-    session = aiohttp.ClientSession(
-        timeout=aiohttp.ClientTimeout(
-            total=http_timeout,
-            connect=http_timeout,
-            sock_connect=http_timeout,
-            sock_read=http_timeout,
-        ),
-        connector=connector,
-    )
-
-    # A custom session is NOT closed by the library (internall=False), so we own
-    # its lifecycle and must close it at shutdown.
+    # Use the default HTTP session/connector. The single-connection workaround
+    # for the firmware bug was tried (v0.3.x) and did not help; the Baichuan
+    # download path (PR #186) is the actual fix and uses its own TCP socket.
     host = Host(
         opts["nvr_host"],
         opts["nvr_username"],
         opts["nvr_password"],
         port=int(opts.get("nvr_port", 80)),
         stream="sub",
-        timeout=http_timeout,
-        aiohttp_get_session_callback=lambda: session,
     )
 
     poll_interval = int(opts.get("poll_interval", 30))
@@ -339,11 +314,6 @@ async def main() -> None:
     finally:
         try:
             await host.logout()
-        except Exception:  # noqa: BLE001
-            pass
-        # Close the session we own (the library won't, since we supplied it).
-        try:
-            await session.close()
         except Exception:  # noqa: BLE001
             pass
 
