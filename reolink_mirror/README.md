@@ -14,7 +14,9 @@ H.264) to `/media` — it never re-records, so there's exactly one mp4 per event
 - Every `poll_interval` seconds, one lightweight motion-search per channel.
 - Downloads are deduplicated by filename — each clip is fetched exactly once.
 - Clips still being written (ended very recently) are skipped for a cycle.
-- Files land in `/media/<media_subdir>/<camera>/<timestamp>.mp4`.
+- Files land in `/media/<media_subdir>/<camera>/<timestamp>.mp4`, plus a
+  matching `<timestamp>.jpg` thumbnail captured `thumbnail_offset` seconds
+  after the motion trigger (same leading timestamp as its video).
 - Each cycle also deletes local clips older than `mirror_hours` (retention).
 
 ## Installation (from this repository, via the HA UI)
@@ -44,6 +46,7 @@ Updates: bump `version` in `config.yaml`; the store will offer an update.
 | `search_window_minutes` | `30` | How far back each poll searches (5–1440). |
 | `media_subdir` | `reolink_mirror` | Subfolder under `/media` for clips. |
 | `mirror_hours` | `48` | Hours of clips to keep locally (1–720). Older clips are deleted each cycle. |
+| `thumbnail_offset` | `8.0` | Seconds into the clip to capture the thumbnail (0–30). Falls back to 0s for shorter clips. |
 
 ## Viewing clips
 

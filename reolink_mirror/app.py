@@ -74,7 +74,47 @@ def safe_name(name: str) -> str:
     return cleaned or "camera"
 
 
-async def download_clip(host: Host, channel: int, vod, dest: Path) -> bool:
+async def grab_thumbnail(src: Path, sec: float, timeout: float = 30.0) -> bool:
+    """Extract a single frame ~``sec`` seconds into ``src`` as a JPEG.
+
+    The thumbnail is written next to ``src`` with the SAME base name (only the
+    extension changes), so its leading timestamp matches the video exactly.
+    Returns True on success. ffmpeg is invoked via asyncio so the poll loop is
+    never blocked.
+    """
+    dst = src.with_suffix(".jpg")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            "-ss", str(sec), "-i", str(src),
+            "-frames:v", "1", "-q:v", "2", "-an", "-y", str(dst),
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+    except FileNotFoundError:
+        _LOGGER.warning("ffmpeg not found; cannot create thumbnail for %s", src)
+        return False
+    try:
+        rc = await asyncio.wait_for(proc.wait(), timeout)
+    except (TimeoutError, asyncio.TimeoutError):
+        proc.kill()
+        await proc.wait()
+        _LOGGER.warning("Thumbnail extraction timed out for %s", src)
+        return False
+    ok = rc == 0 and dst.exists() and dst.stat().st_size > 0
+    if ok:
+        _LOGGER.info("Thumbnail %s (at %.1fs)", dst, sec)
+    return ok
+
+
+async def make_thumbnail(src: Path, sec: float) -> None:
+    """Thumbnail ``sec`` seconds in, falling back to the start of the clip."""
+    if not await grab_thumbnail(src, sec=sec):
+        await grab_thumbnail(src, sec=0.0)
+
+
+async def download_clip(host: Host, channel: int, vod, dest: Path, thumb_offset: float) -> bool:
     """Download a single VOD clip to ``dest``. Returns True on success."""
     tmp = dest.with_suffix(dest.suffix + ".part")
     try:
@@ -119,7 +159,9 @@ def _purge_old_sync(opts: dict) -> int:
     if not media_root.exists():
         return 0
     removed = 0
-    for path in media_root.glob("*/*.mp4"):
+    for path in media_root.glob("*/*"):
+        if path.suffix.lower() not in (".mp4", ".jpg"):
+            continue
         match = re.match(r"(\d{14})_", path.name)
         if not match:
             continue
@@ -159,6 +201,7 @@ async def sync_once(host: Host, opts: dict, state: dict) -> None:
     window = timedelta(minutes=int(opts.get("search_window_minutes", 30)))
     start = now - window
     poll_interval = int(opts.get("poll_interval", 30))
+    thumb_offset = float(opts.get("thumbnail_offset", 2.0))
     media_root = Path("/media") / opts.get("media_subdir", "reolink_mirror")
 
     downloaded = set(state.get("downloaded", []))
@@ -205,8 +248,10 @@ async def sync_once(host: Host, opts: dict, state: dict) -> None:
             if dest.exists():
                 new_downloads.append(fname)
                 continue
-            if await download_clip(host, channel, vod, dest):
+            if await download_clip(host, channel, vod, dest, thumb_offset):
                 new_downloads.append(fname)
+                # Capture a thumbnail ~``thumb_offset``s after the trigger.
+                await make_thumbnail(dest, thumb_offset)
 
     if new_downloads:
         downloaded.update(new_downloads)

@@ -1,6 +1,6 @@
 name: "Reolink NVR Mirror"
 description: "Continuously mirrors Reolink NVR motion recordings (sub stream) to local media storage for fast, low-latency browsing and playback."
-version: "0.1.0"
+version: "0.2.0"
 slug: "reolink_mirror"
 init: false
 arch:
@@ -20,6 +20,7 @@ options:
   search_window_minutes: 30
   media_subdir: "reolink_mirror"
   mirror_hours: 48
+  thumbnail_offset: 8.0
 schema:
   nvr_host: str
   nvr_port: port
@@ -29,3 +30,4 @@ schema:
   search_window_minutes: "int(5,1440)"
   media_subdir: "str?"
   mirror_hours: "int(1,720)"
+  thumbnail_offset: "float(0,30)?"
