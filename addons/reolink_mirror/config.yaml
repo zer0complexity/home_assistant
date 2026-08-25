@@ -1,0 +1,31 @@
+name: "Reolink NVR Mirror"
+description: "Continuously mirrors Reolink NVR motion recordings (sub stream) to local media storage for fast, low-latency browsing and playback."
+version: "0.1.0"
+slug: "reolink_mirror"
+init: false
+arch:
+  - aarch64
+  - amd64
+boot: auto
+startup: application
+map:
+  - type: media
+    read_only: false
+options:
+  nvr_host: "192.168.1.100"
+  nvr_port: 80
+  nvr_username: "admin"
+  nvr_password: ""
+  poll_interval: 30
+  search_window_minutes: 30
+  media_subdir: "reolink_mirror"
+  mirror_hours: 48
+schema:
+  nvr_host: str
+  nvr_port: port
+  nvr_username: str
+  nvr_password: password
+  poll_interval: "int(10,3600)"
+  search_window_minutes: "int(5,1440)"
+  media_subdir: "str?"
+  mirror_hours: "int(1,720)"
