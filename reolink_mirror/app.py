@@ -21,13 +21,23 @@ import asyncio
 import json
 import logging
 import re
+import ssl
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import aiohttp
 from reolink_aio.api import Host
 from reolink_aio.exceptions import ReolinkError
 from reolink_aio.typings import VOD_trigger
+
+# SSL context used for the NVR's self-signed cert when HTTPS is in play.
+try:
+    from reolink_aio.api import SSL_CONTEXT
+except ImportError:  # older pinned versions may not export it
+    SSL_CONTEXT = ssl.create_default_context()
+    SSL_CONTEXT.check_hostname = False
+    SSL_CONTEXT.verify_mode = ssl.CERT_NONE
 
 OPTIONS_PATH = Path("/data/options.json")
 STATE_PATH = Path("/data/state.json")
@@ -266,12 +276,35 @@ async def main() -> None:
     opts = load_options()
     state = load_state()
 
+    # Workaround for a Reolink NVR firmware regression (RLN8-410 v3.6.5.x): the
+    # NVR binds the HTTP session to the single TCP connection used at login and
+    # rejects `cmd=Download` when it is sent over a NEW pooled connection
+    # ("Server disconnected"). Forcing a single persistent connection (limit=1)
+    # keeps login, NvrDownload, and Download on the same connection.
+    http_timeout = 60
+    connector = aiohttp.TCPConnector(
+        ssl=SSL_CONTEXT, limit=1, force_close=False, enable_keep_alive=True
+    )
+    session = aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(
+            total=http_timeout,
+            connect=http_timeout,
+            sock_connect=http_timeout,
+            sock_read=http_timeout,
+        ),
+        connector=connector,
+    )
+
+    # A custom session is NOT closed by the library (internall=False), so we own
+    # its lifecycle and must close it at shutdown.
     host = Host(
         opts["nvr_host"],
         opts["nvr_username"],
         opts["nvr_password"],
         port=int(opts.get("nvr_port", 80)),
         stream="sub",
+        timeout=http_timeout,
+        aiohttp_get_session_callback=lambda: session,
     )
 
     poll_interval = int(opts.get("poll_interval", 30))
@@ -303,6 +336,11 @@ async def main() -> None:
     finally:
         try:
             await host.logout()
+        except Exception:  # noqa: BLE001
+            pass
+        # Close the session we own (the library won't, since we supplied it).
+        try:
+            await session.close()
         except Exception:  # noqa: BLE001
             pass
 
