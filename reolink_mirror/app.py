@@ -282,8 +282,11 @@ async def main() -> None:
     # ("Server disconnected"). Forcing a single persistent connection (limit=1)
     # keeps login, NvrDownload, and Download on the same connection.
     http_timeout = 60
+    # Keep-alive is on by default (keepalive_timeout); force_close=False keeps the
+    # single connection persistent. `enable_keep_alive` is not a valid kwarg in
+    # aiohttp 3.12 and raises TypeError, so it must be omitted.
     connector = aiohttp.TCPConnector(
-        ssl=SSL_CONTEXT, limit=1, force_close=False, enable_keep_alive=True
+        ssl=SSL_CONTEXT, limit=1, force_close=False
     )
     session = aiohttp.ClientSession(
         timeout=aiohttp.ClientTimeout(
