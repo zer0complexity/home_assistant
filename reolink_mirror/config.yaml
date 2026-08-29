@@ -1,6 +1,6 @@
 name: "Reolink NVR Mirror"
 description: "Continuously mirrors Reolink NVR motion recordings (sub stream) to local media storage for fast, low-latency browsing and playback."
-version: "0.5.0"
+version: "0.6.0"
 slug: "reolink_mirror"
 init: false
 arch:
