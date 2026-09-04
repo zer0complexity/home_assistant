@@ -140,6 +140,8 @@ async def download_clip(host: Host, channel: int, vod, dest: Path, thumb_offset:
         _LOGGER.info("Downloaded %s -> %s", vod.file_name, dest)
         return True
     except ReolinkError as err:
+        # Include reolink-aio version in the log for easier debugging.
+        _LOGGER.warning("Reolink-aio version: %s", getattr(err, "__version__", "unknown"))
         _LOGGER.warning("Failed to download %s: %s", vod.file_name, err)
     except Exception as err:  # noqa: BLE001
         _LOGGER.warning("Unexpected error downloading %s: %s", vod.file_name, err)
