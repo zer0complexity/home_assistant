@@ -23,6 +23,7 @@ import logging
 import re
 import sys
 from datetime import datetime, timedelta
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from reolink_aio.api import Host
@@ -41,6 +42,17 @@ logging.basicConfig(
     stream=sys.stdout,
 )
 _LOGGER = logging.getLogger("reolink_mirror")
+
+
+def get_reolink_aio_version() -> str:
+    """Return the installed reolink-aio distribution version."""
+    try:
+        return version("reolink-aio")
+    except PackageNotFoundError:
+        return "unknown"
+
+
+REOLINK_AIO_VERSION = get_reolink_aio_version()
 
 
 def load_options() -> dict:
@@ -141,7 +153,6 @@ async def download_clip(host: Host, channel: int, vod, dest: Path, thumb_offset:
         return True
     except ReolinkError as err:
         # Include reolink-aio version in the log for easier debugging.
-        _LOGGER.warning("Reolink-aio version: %s", getattr(err, "__version__", "unknown"))
         _LOGGER.warning("Failed to download %s: %s", vod.file_name, err)
     except Exception as err:  # noqa: BLE001
         _LOGGER.warning("Unexpected error downloading %s: %s", vod.file_name, err)
@@ -284,7 +295,8 @@ async def main() -> None:
 
     poll_interval = int(opts.get("poll_interval", 30))
     _LOGGER.info(
-        "Connecting to NVR %s:%s (poll=%ss, window=%s min)",
+        "Using reolink-aio %s; connecting to NVR %s:%s (poll=%ss, window=%s min)",
+        REOLINK_AIO_VERSION,
         opts["nvr_host"],
         opts.get("nvr_port", 80),
         poll_interval,
