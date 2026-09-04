@@ -25,7 +25,7 @@ purge_interval_hours: 24
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `watch_directory` | string | `"/media/reolink"` | Root directory where the Reolink NVR uploads video files via FTP. |
+| `watch_directory` | string | `"/media/reolink_mirror"` | Root directory where the Reolink NVR uploads video files via FTP. |
 | `snapshot_offset` | integer | `5` | Time offset (in seconds) to capture the snapshot frame. |
 | `retention_days` | integer | `7` | Number of days to retain video recordings before deletion. |
 | `purge_interval_hours` | integer | `24` | Interval (in hours) at which the retention purge runs. |
