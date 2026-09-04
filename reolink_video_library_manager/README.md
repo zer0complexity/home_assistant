@@ -15,7 +15,7 @@ A Home Assistant add-on that manages Reolink NVR and camera recordings uploaded 
 Example configuration:
 
 ```yaml
-watch_directory: "/media/reolink"
+watch_directory: "/media/reolink_mirror"
 snapshot_offset: 5
 retention_days: 7
 purge_interval_hours: 24
@@ -32,7 +32,7 @@ purge_interval_hours: 24
 
 ## Reolink NVR / Camera Setup
 
-1. Configure an FTP server in Home Assistant (such as the Home Assistant FTP add-on) pointing to `/media/reolink` (or your chosen path).
+1. Configure an FTP server in Home Assistant (such as the Home Assistant FTP add-on) pointing to `/media/reolink_mirror` (or your chosen path).
 2. On your Reolink NVR or camera:
    - Navigate to **Network > Advanced > FTP Settings**.
    - Set the FTP Server IP to your Home Assistant IP.
