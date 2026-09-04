@@ -16,3 +16,6 @@ add-ons from the Home Assistant UI:
 - **[Reolink NVR Mirror](reolink_mirror/)** — continuously mirrors Reolink NVR
   motion recordings (sub stream) to local media storage for fast, low-latency
   browsing and playback in Home Assistant.
+- **[Reolink Video Library Manager](reolink_video_library_manager/)** — manages
+  FTP-uploaded Reolink NVR and camera recordings, generates matching snapshot
+  thumbnails at a configurable offset, and automatically purges expired recordings.
