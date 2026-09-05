@@ -30,35 +30,62 @@ purge_interval_hours: 24
 | `retention_days` | integer | `7` | Number of days to retain video recordings before deletion. |
 | `purge_interval_hours` | integer | `24` | Interval (in hours) at which the retention purge runs. |
 
-## Video Event Card
+## Dashboard Cards
 
-The included Lovelace card displays a recording's companion image and opens the
-associated video in a player dialog when selected.
+The add-on installs custom Lovelace cards automatically at
+`/config/www/video-library-manager-cards.js` whenever it starts.
 
-The add-on installs the card automatically at
-`/config/www/video-event-card.js` whenever it starts. Register it once as a
-Lovelace resource:
+### Dashboard Resource Registration
+
+Register the cards bundle once as a Lovelace resource:
 
 1. Go to **Settings > Dashboards > Resources**.
 2. Select **Add Resource**.
-3. Enter `/local/video-event-card.js?v=0.3.0` as the URL and select
+3. Enter `/local/video-library-manager-cards.js?v=0.4.0` as the URL and select
    **JavaScript Module** as the resource type.
-4. Select **Create**. Refresh the dashboard if the custom card is not listed.
-5. Add the card to a dashboard, using Home Assistant media-source identifiers
-   for the image and video.
+4. Select **Create**. Refresh the dashboard if the custom cards are not listed.
 
 When updating the add-on with a new card version, update the `v=` value in the
 resource URL to make the browser load the new JavaScript file.
 
+---
+
+### Camera Events Card (`custom:camera-events-card`)
+
+Displays a 1-column grid of `video-event-cards` for all recordings matching a specific camera ID in a media directory.
+
+#### Configuration Options
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `camera_id` | integer | Yes | 0-based camera ID (e.g. `0`, `1`). Automatically formatted as 2 digits (`00`, `01`) when matching filenames. |
+| `media_dir` | string | Yes | The media directory name under `/media` (e.g., `"reolink_mirror"`). |
+
+#### Example Usage
+
 ```yaml
-type: custom:video-event-card
-image: media-source://media_source/local/reolink_mirror/front_door/event.jpg
-video: media-source://media_source/local/reolink_mirror/front_door/event.mp4
+type: custom:camera-events-card
+camera_id: 0
+media_dir: reolink_mirror
 ```
 
-Both values must be media-source identifiers, not direct filesystem paths or
-`/media/local/...` URLs. The card resolves them to authenticated URLs before
-loading the image or video.
+File names in `media_dir` follow the format `NVR_dd_YYYYMMDDHHmmSS` (e.g., `NVR_00_20260904120000.jpg` and `NVR_00_20260904120000.mp4`).
+
+---
+
+### Video Event Card (`custom:video-event-card`)
+
+Displays an individual event thumbnail image and opens the associated video in a modal player dialog when selected.
+
+#### Example Usage
+
+```yaml
+type: custom:video-event-card
+image: media-source://media_source/local/reolink_mirror/NVR_00_20260904120000.jpg
+video: media-source://media_source/local/reolink_mirror/NVR_00_20260904120000.mp4
+```
+
+Both values must be media-source identifiers, not direct filesystem paths or `/media/local/...` URLs.
 
 ## Reolink NVR / Camera Setup
 

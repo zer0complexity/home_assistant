@@ -8,7 +8,7 @@ RUN apk add --no-cache python3 py3-pip ffmpeg \
 
 COPY run.sh /
 COPY app.py /
-COPY www/video-event-card.js /opt/reolink_video_library_manager/video-event-card.js
+COPY www/video-library-manager-cards.js /opt/reolink_video_library_manager/video-library-manager-cards.js
 RUN chmod a+x /run.sh
 
 CMD [ "/run.sh" ]
