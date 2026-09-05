@@ -12,7 +12,8 @@ function formatTimestamp(tsStr) {
     return "";
   }
   try {
-    return date.toLocaleString(undefined, { dateStyle: "long", timeStyle: "medium" });
+    // Format the date using the user's locale settings but always in 24 hour format
+    return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium", hour12: false });
   } catch (e) {
     return date.toLocaleString();
   }
@@ -282,7 +283,7 @@ class CameraEventsCard extends HTMLElement {
     const style = document.createElement("style");
     style.textContent = `
       :host { display: block; }
-      ha-card { padding: 16px; }
+      ha-card { padding: 12px; }
       .events-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
       .status, .empty, .error { text-align: center; color: var(--secondary-text-color, #888); padding: 16px 0; }
     `;
