@@ -152,14 +152,14 @@ class VideoEventCard extends HTMLElement {
       :host { display: block; }
       .thumbnail { display: block; position: relative; width: 100%; margin: 0; padding: 0; border: 0; background: #111; cursor: pointer; overflow: hidden; }
       .thumbnail:focus-visible { outline: 3px solid var(--primary-color); outline-offset: -3px; }
-      img { display: block; width: 100%; height: auto; }
+      img { display: block; width: 100%; height: auto; max-height: 360px; object-fit: cover; }
       .play { position: absolute; top: 50%; left: 50%; display: grid; width: 52px; height: 52px; place-items: center; border-radius: 50%; background: rgb(0 0 0 / 70%); color: #fff; font-size: 24px; transform: translate(-50%, -50%); }
       .status { position: absolute; inset: auto 0 12px; color: #fff; font-size: 14px; }
-      dialog { width: calc(100vw - 32px); max-width: calc(100vw - 32px); margin: auto; padding: 0; border: 0; background: #000; color: #fff; }
+      dialog { width: min(960px, calc(100vw - 32px)); margin: auto; padding: 0; border: 0; background: #000; color: #fff; }
       dialog::backdrop { background: rgb(0 0 0 / 65%); }
       .player-header { display: flex; justify-content: flex-end; min-height: 40px; }
       .close { width: 40px; height: 40px; border: 0; background: transparent; color: #fff; font-size: 32px; line-height: 1; cursor: pointer; }
-      video { display: block; width: 100%; height: auto; max-height: calc(100vh - 88px); }
+      video { display: block; width: 100%; max-height: calc(100vh - 88px); }
     `;
     this.append(style);
   }
