@@ -7,16 +7,9 @@ function formatTimestamp(tsStr) {
     return "";
   }
   const [, y, m, d, hh, mm, ss] = match;
-  const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10), parseInt(hh, 10), parseInt(mm, 10), parseInt(ss, 10));
-  if (isNaN(date.getTime())) {
-    return "";
-  }
-  try {
-    // Format the date using the user's locale settings but always in 24 hour format
-    return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium", hour12: false });
-  } catch (e) {
-    return date.toLocaleString();
-  }
+  // Return a string of the format "YYYY/MM/DD HH:MM:SS"
+  const rv = `${y}/${m}/${d} ${hh}:${mm}:${ss}`;
+  return rv;
 }
 
 class VideoEventCard extends HTMLElement {
@@ -151,6 +144,10 @@ class VideoEventCard extends HTMLElement {
     const style = document.createElement("style");
     style.textContent = `
       :host { display: block; }
+      ha-card {
+        --ha-card-header-font-size: 14px;
+        --ha-card-header-line-height: 20px;
+      }
       .thumbnail { display: block; position: relative; width: 100%; margin: 0; padding: 0; border: 0; background: #111; cursor: pointer; overflow: hidden; }
       .thumbnail:focus-visible { outline: 3px solid var(--primary-color); outline-offset: -3px; }
       img { display: block; width: 100%; height: auto; max-height: 360px; object-fit: cover; }
@@ -283,7 +280,11 @@ class CameraEventsCard extends HTMLElement {
     const style = document.createElement("style");
     style.textContent = `
       :host { display: block; }
-      ha-card { padding: 12px; }
+      ha-card {
+        padding: 12px;
+        --ha-card-header-font-size: 16px;
+        --ha-card-header-line-height: 22px;
+      }
       .events-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
       .status, .empty, .error { text-align: center; color: var(--secondary-text-color, #888); padding: 16px 0; }
     `;
