@@ -30,6 +30,34 @@ purge_interval_hours: 24
 | `retention_days` | integer | `7` | Number of days to retain video recordings before deletion. |
 | `purge_interval_hours` | integer | `24` | Interval (in hours) at which the retention purge runs. |
 
+## Video Event Card
+
+The included Lovelace card displays a recording's companion image and opens the
+associated video in a player dialog when selected.
+
+The add-on installs the card automatically at
+`/config/www/video-event-card.js` whenever it starts. Register it once as a
+Lovelace resource:
+
+1. Go to **Settings > Dashboards > Resources**.
+2. Select **Add Resource**.
+3. Enter `/local/video-event-card.js` as the URL and select **JavaScript Module**
+   as the resource type.
+4. Select **Create**. Refresh the dashboard if the custom card is not listed.
+5. Add the card to a dashboard, using Home Assistant media URLs for the image
+   and video. A file at
+   `/media/reolink_mirror/front_door/event.mp4` is available at
+   `/media/local/reolink_mirror/front_door/event.mp4`.
+
+```yaml
+type: custom:video-event-card
+image: /media/local/reolink_mirror/front_door/event.jpg
+video: /media/local/reolink_mirror/front_door/event.mp4
+```
+
+Both values must be `/media/local/...` URLs. They are authenticated by Home
+Assistant and are not direct filesystem paths.
+
 ## Reolink NVR / Camera Setup
 
 1. Configure an FTP server in Home Assistant (such as the Home Assistant FTP add-on) pointing to `/media/reolink_mirror` (or your chosen path).
