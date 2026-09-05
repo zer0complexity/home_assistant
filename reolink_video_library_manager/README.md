@@ -41,7 +41,7 @@ Register the cards bundle once as a Lovelace resource:
 
 1. Go to **Settings > Dashboards > Resources**.
 2. Select **Add Resource**.
-3. Enter `/local/video-library-manager-cards.js?v=0.4.2` as the URL and select
+3. Enter `/local/video-library-manager-cards.js?v=0.4.3` as the URL and select
    **JavaScript Module** as the resource type.
 4. Select **Create**. Refresh the dashboard if the custom cards are not listed.
 
@@ -60,14 +60,14 @@ Displays a 1-column grid of `video-event-cards` for all recordings matching a sp
 |---|---|---|---|
 | `camera_id` | integer | Yes | 0-based camera ID (e.g. `0`, `1`). Automatically formatted as 2 digits (`00`, `01`) when matching filenames. |
 | `media_dir` | string | Yes | The media directory name under `/media` (e.g., `"reolink_mirror"`). |
-| `camera-name` | string | No | Optional camera display name (e.g. `"Driveway"`). If provided, sets card header title to `"[camera-name] Events"` instead of `"Camera [id] Events"`. |
+| `camera_name` | string | No | Optional camera display name (e.g. `"Driveway"`). If provided, sets card header title to `"[camera_name] Events"` instead of `"Camera [id] Events"`. |
 
 #### Example Usage
 
 ```yaml
 type: custom:camera-events-card
 camera_id: 0
-camera-name: Front Door
+camera_name: Front Door
 media_dir: reolink_mirror
 ```
 

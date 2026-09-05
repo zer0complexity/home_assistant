@@ -255,12 +255,14 @@ class CameraEventsCard extends HTMLElement {
       return;
     }
 
-    if (this.querySelector("ha-card")) {
+    const cameraName = this.config.camera_name;
+    const headerTitle = cameraName ? `${cameraName} Events` : `Camera ${this.config.camera_id} Events`;
+
+    const existingCard = this.querySelector("ha-card");
+    if (existingCard) {
+      existingCard.setAttribute("header", headerTitle);
       return;
     }
-
-    const cameraName = this.config["camera-name"] || this.config.camera_name;
-    const headerTitle = cameraName ? `${cameraName} Events` : `Camera ${this.config.camera_id} Events`;
 
     this.innerHTML = `
       <ha-card header="${headerTitle}">
@@ -348,7 +350,7 @@ class CameraEventsCard extends HTMLElement {
         return;
       }
 
-      const cameraName = this.config["camera-name"] || this.config.camera_name;
+      const cameraName = this.config.camera_name;
       const displayName = cameraName || `camera ${this.config.camera_id}`;
 
       if (validEvents.length === 0) {
@@ -381,7 +383,7 @@ class CameraEventsCard extends HTMLElement {
         return;
       }
       console.error("Failed to load camera events", err);
-      const cameraName = this.config["camera-name"] || this.config.camera_name;
+      const cameraName = this.config.camera_name;
       const displayName = cameraName || `camera ${this.config.camera_id}`;
       if (container) {
         container.innerHTML = `<div class="error">Failed to load events for ${displayName}</div>`;
