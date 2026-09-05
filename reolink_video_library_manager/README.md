@@ -41,7 +41,7 @@ Register the cards bundle once as a Lovelace resource:
 
 1. Go to **Settings > Dashboards > Resources**.
 2. Select **Add Resource**.
-3. Enter `/local/video-library-manager-cards.js?v=0.4.3` as the URL and select
+3. Enter `/local/video-library-manager-cards.js?v=0.4.4` as the URL and select
    **JavaScript Module** as the resource type.
 4. Select **Create**. Refresh the dashboard if the custom cards are not listed.
 

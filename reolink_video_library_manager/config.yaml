@@ -1,6 +1,6 @@
 name: "Reolink Video Library Manager"
 description: "Manages FTP-uploaded Reolink videos, generates snapshots, installs its dashboard cards, and purges expired recordings."
-version: "0.4.3"
+version: "0.4.4"
 slug: "reolink_video_library_manager"
 init: false
 arch:
