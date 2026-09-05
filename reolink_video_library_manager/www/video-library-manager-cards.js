@@ -1,3 +1,23 @@
+function formatTimestamp(tsStr) {
+  if (!tsStr || typeof tsStr !== "string") {
+    return "";
+  }
+  const match = tsStr.match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+  if (!match) {
+    return "";
+  }
+  const [, y, m, d, hh, mm, ss] = match;
+  const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10), parseInt(hh, 10), parseInt(mm, 10), parseInt(ss, 10));
+  if (isNaN(date.getTime())) {
+    return "";
+  }
+  try {
+    return date.toLocaleString(undefined, { dateStyle: "long", timeStyle: "medium" });
+  } catch (e) {
+    return date.toLocaleString();
+  }
+}
+
 class VideoEventCard extends HTMLElement {
   static getStubConfig() {
     return {
@@ -46,8 +66,15 @@ class VideoEventCard extends HTMLElement {
       return;
     }
 
+    const ts =
+      this.config.timestamp ||
+      (this.config.image || "").match(/_(\d{14})\./)?.[1] ||
+      (this.config.video || "").match(/_(\d{14})\./)?.[1];
+    const cardTitle = formatTimestamp(ts);
+    const headerAttr = cardTitle ? ` header="${cardTitle}"` : "";
+
     this.innerHTML = `
-      <ha-card>
+      <ha-card${headerAttr}>
         <button class="thumbnail" type="button" aria-label="Play event video">
           <img alt="Event video thumbnail">
           <span class="play" aria-hidden="true">&#9658;</span>
@@ -232,8 +259,11 @@ class CameraEventsCard extends HTMLElement {
       return;
     }
 
+    const cameraName = this.config["camera-name"] || this.config.camera_name;
+    const headerTitle = cameraName ? `${cameraName} Events` : `Camera ${this.config.camera_id} Events`;
+
     this.innerHTML = `
-      <ha-card header="Camera ${this.config.camera_id} Events">
+      <ha-card header="${headerTitle}">
         <div class="events-container">
           <div class="status">Loading events...</div>
         </div>
@@ -318,8 +348,11 @@ class CameraEventsCard extends HTMLElement {
         return;
       }
 
+      const cameraName = this.config["camera-name"] || this.config.camera_name;
+      const displayName = cameraName || `camera ${this.config.camera_id}`;
+
       if (validEvents.length === 0) {
-        container.innerHTML = `<div class="empty">No events found for camera ${this.config.camera_id}</div>`;
+        container.innerHTML = `<div class="empty">No events found for ${displayName}</div>`;
         this._loadedEvents = true;
         return;
       }
@@ -332,6 +365,7 @@ class CameraEventsCard extends HTMLElement {
         card.setConfig({
           image: event.imageMediaId,
           video: event.videoMediaId,
+          timestamp: event.timestamp,
         });
         if (this._hass) {
           card.hass = this._hass;
@@ -347,8 +381,10 @@ class CameraEventsCard extends HTMLElement {
         return;
       }
       console.error("Failed to load camera events", err);
+      const cameraName = this.config["camera-name"] || this.config.camera_name;
+      const displayName = cameraName || `camera ${this.config.camera_id}`;
       if (container) {
-        container.innerHTML = `<div class="error">Failed to load events for camera ${this.config.camera_id}</div>`;
+        container.innerHTML = `<div class="error">Failed to load events for ${displayName}</div>`;
       }
     }
   }
