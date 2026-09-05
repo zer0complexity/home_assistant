@@ -41,22 +41,24 @@ Lovelace resource:
 
 1. Go to **Settings > Dashboards > Resources**.
 2. Select **Add Resource**.
-3. Enter `/local/video-event-card.js` as the URL and select **JavaScript Module**
-   as the resource type.
+3. Enter `/local/video-event-card.js?v=0.3.0` as the URL and select
+   **JavaScript Module** as the resource type.
 4. Select **Create**. Refresh the dashboard if the custom card is not listed.
-5. Add the card to a dashboard, using Home Assistant media URLs for the image
-   and video. A file at
-   `/media/reolink_mirror/front_door/event.mp4` is available at
-   `/media/local/reolink_mirror/front_door/event.mp4`.
+5. Add the card to a dashboard, using Home Assistant media-source identifiers
+   for the image and video.
+
+When updating the add-on with a new card version, update the `v=` value in the
+resource URL to make the browser load the new JavaScript file.
 
 ```yaml
 type: custom:video-event-card
-image: /media/local/reolink_mirror/front_door/event.jpg
-video: /media/local/reolink_mirror/front_door/event.mp4
+image: media-source://media_source/local/reolink_mirror/front_door/event.jpg
+video: media-source://media_source/local/reolink_mirror/front_door/event.mp4
 ```
 
-Both values must be `/media/local/...` URLs. They are authenticated by Home
-Assistant and are not direct filesystem paths.
+Both values must be media-source identifiers, not direct filesystem paths or
+`/media/local/...` URLs. The card resolves them to authenticated URLs before
+loading the image or video.
 
 ## Reolink NVR / Camera Setup
 
