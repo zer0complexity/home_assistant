@@ -8,14 +8,16 @@ class VideoEventCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config.image || typeof config.image !== "string") {
-      throw new Error("Video Event Card requires an image media-source identifier.");
-    }
-    if (!config.video || typeof config.video !== "string") {
-      throw new Error("Video Event Card requires a video media-source identifier.");
+    if (!config) {
+      throw new Error("Invalid configuration");
     }
 
-    this.config = config;
+    this.config = {
+      image: "",
+      video: "",
+      ...config,
+    };
+
     this.render();
     this.resolveMedia();
   }
@@ -175,20 +177,22 @@ class CameraEventsCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (
-      config.camera_id === undefined ||
-      config.camera_id === null ||
-      typeof config.camera_id !== "number" ||
-      !Number.isInteger(config.camera_id) ||
-      config.camera_id < 0
-    ) {
-      throw new Error("Camera Events Card requires a valid non-negative integer 'camera_id'.");
-    }
-    if (!config.media_dir || typeof config.media_dir !== "string" || config.media_dir.trim() === "") {
-      throw new Error("Camera Events Card requires a valid non-empty string 'media_dir'.");
+    if (!config) {
+      throw new Error("Invalid configuration");
     }
 
-    this.config = config;
+    const camIdRaw = config.camera_id !== undefined ? config.camera_id : 0;
+    const camId = typeof camIdRaw === "number" ? camIdRaw : parseInt(camIdRaw, 10);
+    const validCamId = !isNaN(camId) && camId >= 0 ? camId : 0;
+
+    const mediaDir = config.media_dir && typeof config.media_dir === "string" ? config.media_dir.trim() : "reolink_mirror";
+
+    this.config = {
+      ...config,
+      camera_id: validCamId,
+      media_dir: mediaDir,
+    };
+
     this.render();
     this.loadEvents();
   }
