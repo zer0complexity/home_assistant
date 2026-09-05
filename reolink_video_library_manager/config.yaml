@@ -1,6 +1,6 @@
 name: "Reolink Video Library Manager"
 description: "Manages FTP-uploaded Reolink videos, generates snapshots, installs its dashboard card, and purges expired recordings."
-version: "0.2.2"
+version: "0.2.3"
 slug: "reolink_video_library_manager"
 init: false
 arch:
@@ -14,6 +14,7 @@ startup: application
 map:
   - type: homeassistant_config
     read_only: false
+    path: /config
   - type: media
     read_only: false
   - type: share
